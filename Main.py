@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session
 from therapy_docs import therapy_docs
 from better_profanity import profanity
+from sensitive_topics import SENSITIVE_TOPICS
 import requests
 import secrets
 import ollama
@@ -45,9 +46,20 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     user_prompt = request.json.get("prompt", "")
+
     #filter curse words
     if profanity.contains_profanity(user_prompt):
         return jsonify({"response": "Let's keep things respectful, please."}), 200
+    
+    #filter for any sensitive topics that goes beyond our use cases
+    lower_prompt = user_prompt.lower()
+    if any(topic in lower_prompt for topic in SENSITIVE_TOPICS):
+        return jsonify({
+            "response": (
+                "I'm really sorry you're feeling this way but this goes beyond what I can help with.\n\n"
+                "If you're in crisis or need help, please reach out to a therapist, doctor, or a mental health support line in your country."
+            )
+        }), 200
 
     update_history("user", user_prompt)
     history = get_history()
@@ -85,6 +97,7 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json().get("response", "").strip()
+        
         #censor potential profanity for safety reasons
         ai_response = profanity.censor(ai_response)
         update_history("assistant", ai_response)
