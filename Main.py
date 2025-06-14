@@ -41,7 +41,7 @@ def update_history(role, content):
 @app.route("/")
 def index():
     session["chat_history"] = [
-     {"role": "assistant", "content": "Hey! I'm your Headspace Helper. How can I support you today? 🍃"}
+     {"role": "assistant", "content": "Hey! I'm your Headspace Helper. How can I support you today?"}
     ]
     return render_template("index.html")
 

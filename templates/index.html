@@ -7,12 +7,15 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-history" id="chatHistory">
-      <!-- Chat messages will appear here -->
+  <div class="main-wrapper">
+    <div class="sidebar">
+      <img src="{{ url_for('static', filename='images/Headspace helper.png') }}" alt="Logo" class="headspacehelperlogo" />
     </div>
-    <input id="userInput" type="text" placeholder="How are you feeling today?" />
-    <button onclick="sendMessage()">Send</button>
+    <div class="chat-container">
+      <div class="chat-history" id="chatHistory"></div>
+      <input id="userInput" type="text" placeholder="How are you feeling today?" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>

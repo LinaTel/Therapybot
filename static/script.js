@@ -10,7 +10,24 @@ async function loadInitialMessage() {
     data.history.forEach((msg) => {
       const msgBox = document.createElement("div");
       msgBox.classList.add("message", msg.role === "user" ? "user-message" : "ai-message");
-      msgBox.innerText = msg.content;
+
+      if (msg.role === "user") {
+        msgBox.innerText = msg.content;
+      } else {
+        // Create span for AI text
+        const textSpan = document.createElement("span");
+        textSpan.classList.add("ai-text");
+        textSpan.innerText = msg.content;
+
+        // Create mascot image
+        const mascotImg = document.createElement("img");
+        mascotImg.src = "/static/images/studybuddy cat.png";
+        mascotImg.classList.add("ai-mascot");
+
+        msgBox.appendChild(textSpan);
+        msgBox.appendChild(mascotImg);
+      }
+
       chatHistory.appendChild(msgBox);
     });
 
@@ -25,22 +42,32 @@ async function sendMessage() {
   const chatHistory = document.getElementById("chatHistory");
 
   if (!userInput.trim()) {
-    return; // Don't send if input is empty
+    return; 
   }
 
-  // Display the user's message in the chat history
+  // Display the user's message
   const userMessage = document.createElement("div");
   userMessage.classList.add("message", "user-message");
   userMessage.innerText = userInput;
   chatHistory.appendChild(userMessage);
 
-  // Scroll to the bottom to show new message
+  // Scroll down
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
-  // Send user input to the Flask backend
+  // Create AI response box with mascot
   const responseBox = document.createElement("div");
   responseBox.classList.add("message", "ai-message");
-  responseBox.innerText = "Thinking..."; // Temporary message while waiting
+
+  const textSpan = document.createElement("span");
+  textSpan.classList.add("ai-text");
+  textSpan.innerText = "Thinking...";
+
+  const mascotImg = document.createElement("img");
+  mascotImg.src = "/static/images/studybuddy cat.png"; 
+  mascotImg.classList.add("ai-mascot");
+
+  responseBox.appendChild(textSpan);
+  responseBox.appendChild(mascotImg);
   chatHistory.appendChild(responseBox);
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
@@ -54,18 +81,18 @@ async function sendMessage() {
     const data = await res.json();
 
     if (data.response) {
-      responseBox.innerText = data.response.trim();
+      textSpan.innerText = data.response.trim();
     } else {
-      responseBox.innerText = "Error: Could not get a response.";
+      textSpan.innerText = "Error: Could not get a response.";
     }
   } catch (error) {
-    responseBox.innerText = "Error contacting the server.";
+    textSpan.innerText = "Error contacting the server.";
     console.error(error);
   }
 
-  // Scroll to the bottom to show AI's response
+  // Scroll down
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
-  // Clear input field
+  // Clear input
   document.getElementById("userInput").value = "";
 }
