@@ -40,8 +40,14 @@ def update_history(role, content):
 
 @app.route("/")
 def index():
-    session["chat_history"] = []
+    session["chat_history"] = [
+     {"role": "assistant", "content": "Hey! I'm your Headspace Helper. How can I support you today? 🍃"}
+    ]
     return render_template("index.html")
+
+@app.route("/session-history", methods=["GET"])
+def session_history():
+    return jsonify({"history": get_history()})
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -63,11 +69,6 @@ def chat():
 
     update_history("user", user_prompt)
     history = get_history()
-
-    if len(history) == 1 and history[0]["role"] == "user":
-        initial_reply = "Solution? Listening ear? Or rationalize?"
-        update_history("assistant", initial_reply)
-        return jsonify({"response": initial_reply})
 
     resp = ollama.embed(model="mxbai-embed-large", input=user_prompt)
     query_embedding = resp["embeddings"]

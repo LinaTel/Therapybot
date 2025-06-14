@@ -1,9 +1,31 @@
+document.addEventListener("DOMContentLoaded", loadInitialMessage);
+
+async function loadInitialMessage() {
+  try {
+    const res = await fetch("/session-history");
+    const data = await res.json();
+
+    const chatHistory = document.getElementById("chatHistory");
+
+    data.history.forEach((msg) => {
+      const msgBox = document.createElement("div");
+      msgBox.classList.add("message", msg.role === "user" ? "user-message" : "ai-message");
+      msgBox.innerText = msg.content;
+      chatHistory.appendChild(msgBox);
+    });
+
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  } catch (error) {
+    console.error("Error loading initial chat history:", error);
+  }
+}
+
 async function sendMessage() {
   const userInput = document.getElementById("userInput").value;
   const chatHistory = document.getElementById("chatHistory");
 
   if (!userInput.trim()) {
-    return;  // Don't send if input is empty
+    return; // Don't send if input is empty
   }
 
   // Display the user's message in the chat history
@@ -18,12 +40,11 @@ async function sendMessage() {
   // Send user input to the Flask backend
   const responseBox = document.createElement("div");
   responseBox.classList.add("message", "ai-message");
-  responseBox.innerText = "Thinking...";  // Temporary message while waiting
+  responseBox.innerText = "Thinking..."; // Temporary message while waiting
   chatHistory.appendChild(responseBox);
   chatHistory.scrollTop = chatHistory.scrollHeight;
 
   try {
-    // Send the user input to the Flask server
     const res = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,7 +54,6 @@ async function sendMessage() {
     const data = await res.json();
 
     if (data.response) {
-      // Replace "Thinking..." with the AI's response
       responseBox.innerText = data.response.trim();
     } else {
       responseBox.innerText = "Error: Could not get a response.";
@@ -45,4 +65,7 @@ async function sendMessage() {
 
   // Scroll to the bottom to show AI's response
   chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  // Clear input field
+  document.getElementById("userInput").value = "";
 }
