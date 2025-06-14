@@ -19,13 +19,7 @@ async function loadInitialMessage() {
         textSpan.classList.add("ai-text");
         textSpan.innerText = msg.content;
 
-        // Create mascot image
-        const mascotImg = document.createElement("img");
-        mascotImg.src = "/static/images/studybuddy cat.png";
-        mascotImg.classList.add("ai-mascot");
-
         msgBox.appendChild(textSpan);
-        msgBox.appendChild(mascotImg);
       }
 
       chatHistory.appendChild(msgBox);
@@ -38,38 +32,45 @@ async function loadInitialMessage() {
 }
 
 async function sendMessage() {
-  const userInput = document.getElementById("userInput").value;
+  const userInputField = document.getElementById("userInput");
+  const userInput = userInputField.value.trim();
   const chatHistory = document.getElementById("chatHistory");
 
-  if (!userInput.trim()) {
-    return; 
-  }
+  if (!userInput) return;
 
-  // Display the user's message
+  // Show user's message
   const userMessage = document.createElement("div");
   userMessage.classList.add("message", "user-message");
   userMessage.innerText = userInput;
   chatHistory.appendChild(userMessage);
 
-  // Scroll down
-  chatHistory.scrollTop = chatHistory.scrollHeight;
-
-  // Create AI response box with mascot
+  // Create AI response box with loader
   const responseBox = document.createElement("div");
   responseBox.classList.add("message", "ai-message");
 
-  const textSpan = document.createElement("span");
-  textSpan.classList.add("ai-text");
-  textSpan.innerText = "Thinking...";
+  const loader = document.createElement("div");
+  loader.classList.add("loader-wrapper");
+  loader.innerHTML = `
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="shadow"></div>
+    <div class="shadow"></div>
+    <div class="shadow"></div>
+  `;
 
-  const mascotImg = document.createElement("img");
-  mascotImg.src = "/static/images/studybuddy cat.png"; 
+
+    const mascotImg = document.createElement("img");
+  mascotImg.src = "/static/images/studybuddy cat.png";
   mascotImg.classList.add("ai-mascot");
 
-  responseBox.appendChild(textSpan);
-  responseBox.appendChild(mascotImg);
+  responseBox.appendChild(loader);
+
   chatHistory.appendChild(responseBox);
   chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  // Clear input field
+  userInputField.value = "";
 
   try {
     const res = await fetch("/chat", {
@@ -80,19 +81,22 @@ async function sendMessage() {
 
     const data = await res.json();
 
+    responseBox.removeChild(loader);
+
+    const textSpan = document.createElement("span");
+    textSpan.classList.add("ai-text");
+
     if (data.response) {
       textSpan.innerText = data.response.trim();
     } else {
       textSpan.innerText = "Error: Could not get a response.";
     }
+
+    responseBox.appendChild(textSpan);
   } catch (error) {
-    textSpan.innerText = "Error contacting the server.";
-    console.error(error);
+    loader.innerHTML = "Error contacting the server.";
+    console.error("Fetch error:", error);
   }
 
-  // Scroll down
   chatHistory.scrollTop = chatHistory.scrollHeight;
-
-  // Clear input
-  document.getElementById("userInput").value = "";
 }
