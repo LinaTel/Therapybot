@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session
 from therapy_docs import therapy_docs
+from better_profanity import profanity
 import requests
 import secrets
 import ollama
@@ -8,10 +9,10 @@ import chromadb
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32) 
+profanity.load_censor_words()
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME_MENTALCOACH = "mentalcoach"
-
 
 
 chroma_client = chromadb.Client()
@@ -44,6 +45,9 @@ def index():
 @app.route("/chat", methods=["POST"])
 def chat():
     user_prompt = request.json.get("prompt", "")
+    #filter curse words
+    if profanity.contains_profanity(user_prompt):
+        return jsonify({"response": "Let's keep things respectful, please."}), 200
 
     update_history("user", user_prompt)
     history = get_history()
@@ -53,18 +57,14 @@ def chat():
         update_history("assistant", initial_reply)
         return jsonify({"response": initial_reply})
 
-    # 1. Embed user prompt to get vector for retrieval
     resp = ollama.embed(model="mxbai-embed-large", input=user_prompt)
     query_embedding = resp["embeddings"]
 
-    # 2. Query ChromaDB for top 3 relevant therapy docs
     results = collection.query(query_embeddings=query_embedding, n_results=3)
-    retrieved_docs = results["documents"]  # This is a list of lists
+    retrieved_docs = results["documents"]  
 
-    # Flatten the list (in case each doc is wrapped in a list)
     flat_docs = [doc for sublist in retrieved_docs for doc in sublist]
 
-    # 3. Build prompt: retrieved docs + chat history
     history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
     prompt = (
         "You are an assistant who answers questions ONLY based on the following documents:\n\n"
@@ -74,10 +74,6 @@ def chat():
         + f"\n\nUser question: {user_prompt}\nAssistant:"
     )
 
-    print("=== Prompt sent to Ollama ===")
-    print(prompt)  # Optional: debug print to verify the prompt
-
-    # 4. Send prompt to Ollama mentalcoach model
     response = requests.post(
         OLLAMA_URL,
         json={
@@ -89,6 +85,8 @@ def chat():
 
     if response.status_code == 200:
         ai_response = response.json().get("response", "").strip()
+        #censor potential profanity for safety reasons
+        ai_response = profanity.censor(ai_response)
         update_history("assistant", ai_response)
         return jsonify({"response": ai_response})
     else:
