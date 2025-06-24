@@ -13,7 +13,7 @@ app.secret_key = secrets.token_hex(32)
 profanity.load_censor_words()
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME_MENTALCOACH = "mentalcoach"
+MODEL_NAME_MENTALCOACH = "mental_helper"
 
 
 chroma_client = chromadb.Client()
